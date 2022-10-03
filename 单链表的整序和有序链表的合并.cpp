@@ -8,27 +8,27 @@ typedef struct node
 	struct node* next;
 }Node, * ChainList;
 
-void sort(ChainList &L,Node *p) {
-	if (L->next == NULL) { 
+void sort(ChainList &L,Node *p) {//每创建一个新的节点，就把它插入到链表的合适位置，从小到大
+	if (L->next == NULL) { //当无节点时
 		p->next = L->next;
 		L->next = p;
 	}
 	else {
 		Node *temp = new Node;
 		temp = L;
-		if (p->data <= temp->next->data) {
+		if (p->data <= temp->next->data) {//当只有一个节点时
 			p->next = temp->next;
 			temp->next = p;
 			return;
 		}
 		while (temp->next != NULL) {
 			temp = temp->next;
-			if (temp->next == NULL) {
+			if (temp->next == NULL) {//当应该插入到最末尾时
 				p->next = temp->next;
 				temp->next = p;
 				break;
 			}
-			if (p->data > temp->data && p->data <= temp->next->data) {
+			if (p->data > temp->data && p->data <= temp->next->data) {//插入中间某个位置
 				p->next = temp->next;
 				temp->next = p;
 				break;
