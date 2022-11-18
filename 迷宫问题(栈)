@@ -1,0 +1,176 @@
+#include <iostream>
+#include<fstream>
+#define m 8
+#define n 8
+#define MAX 100
+using namespace std;
+typedef int Maze[m + 2][n + 2];
+//最短路程的数据
+int minLen = MAX;
+typedef struct Position {
+	int x;
+	int y;
+} ;
+typedef struct StackNode {
+	Position posi;
+	int order=0;
+}Elemtype;
+
+StackNode minPath[MAX];
+
+class myWay
+{
+public:
+	myWay() { data = new Elemtype[MAX];if (data == NULL) { cout << "动态存储分配失败" << endl;exit(1); } };
+	void append(Elemtype);
+	void pop();
+	void display();
+	Elemtype getEnd();
+	int getLength() { return size; }
+	Elemtype* getData() { return data; }
+	bool isEmpty();
+	void setOrder(int num) { data[size - 1].order = num; }
+private:
+	int size = 0;
+	Elemtype* data;
+};
+//入栈
+void myWay::append(Elemtype x) {
+	if(size < MAX)
+	{
+		size++;
+		data[size-1] = x;
+	}
+	else
+	{
+	cout << "栈满\n";
+	exit(1);
+	}
+}
+//出栈
+void myWay::pop() {
+	if (size > 0)
+	{
+		size--;
+	}
+	else
+	{
+		cout << "栈空\n";
+		exit(1);
+	}
+}
+//显示栈
+void myWay::display() {
+	for (int i = 0; i < size; i++)
+	{
+		cout << '('<<data[i].posi.x <<',' << data[i].posi.y<<')' << "  ";
+	}
+	cout << endl;
+}
+bool myWay::isEmpty() {
+		if (size == 0) {
+			return true;
+		}
+		else
+			return false;
+}
+//获取栈的最后一个元素
+Elemtype myWay::getEnd() {
+	if (size!= 0)
+	{
+		return data[size-1];
+	}
+	else
+	{
+		cout << "栈空\n";
+		exit(1);
+	}
+}
+//-------------------------------------------
+//使用文件读取来赋初值或随机赋值
+void initmaze(Maze maze) {
+	fstream mazeSet;
+	mazeSet.open("mazeset.txt");
+	for (int i = 1;i < m + 1;i++) {
+		for (int j = 1;j < n + 1;j++)
+			mazeSet>>maze[i][j];
+	}
+	mazeSet.close();
+}
+//获取最短路径
+void SetMinPath(myWay& way) {
+	if (way.getLength() < minLen) {
+		minLen = way.getLength();
+		for (int i = 0;i < way.getLength();i++)
+			minPath[i] = way.getData()[i];
+	}
+}
+//打印最短路径
+void DisplayMinPath() {
+	cout << "最短的距离是：" << minLen << endl;
+	cout << "最短的路径为：";
+	for (int i = 0;i < minLen;i++)cout<<"("<<minPath[i].posi.x<<","<<minPath[i].posi.y<<")";
+	cout << endl;
+}
+
+void Move(Maze maze,myWay &way) {
+	if (way.isEmpty()) { return; }
+
+	StackNode Node=way.getEnd();
+
+	if (Node.posi.x == m && Node.posi.y == n) { 	//到终点后要回溯
+		SetMinPath(way);//打印排列好
+		way.display();
+		way.pop();//删掉终点（此时终点不是墙）
+		Node = way.getEnd();//回到终点的上一个点
+	}
+
+	maze[Node.posi.x][Node.posi.y] = 2;//防止重复访问
+
+	Position temp = Node.posi;//保存探索前的坐标，下面的向四个方向探索会使得Node的坐标改变
+	bool isFind = false;
+	while (Node.order <= 4 && !isFind) {//一个order值就可以使得节点退栈后不会再进入之前的点
+		Node.order++;
+		Node.posi = temp;
+		switch (Node.order)
+		{
+		case 1:Node.posi.y += 1;break;
+		case 2:Node.posi.x += 1;break;
+		case 3:Node.posi.y -= 1;break;
+		case 4:Node.posi.x -= 1;break;
+		}
+		if (maze[Node.posi.x][Node.posi.y] == 1)
+			isFind = true;
+	}
+	if(isFind){
+		way.setOrder(Node.order);//这个order值是坐标未改变的Node的值，也就是way的末尾节点
+		way.append(Node);
+		way.setOrder(0);//第一次入栈的节点的order值应该为0
+		Move(maze,way);
+	}
+	else {
+		maze[Node.posi.x][Node.posi.y] = 1;//退栈后之前的节点要可以被其他路径访问
+		way.pop();
+		Move(maze, way);
+	}	
+}
+
+void solveMaze(Maze maze,StackNode initNode) {
+	myWay accessibleWay=myWay();
+	accessibleWay.append(initNode);
+
+	Move(maze,accessibleWay);
+
+	DisplayMinPath();
+}
+
+int main() {
+	Maze maze = { 0 };
+	StackNode initNode = { 1,1,0 };
+
+	initmaze(maze);
+	if (maze[1][1] == 0) { cout << "初始位置为实体";return 0; }
+
+	solveMaze(maze,initNode);
+	return 0;
+}
